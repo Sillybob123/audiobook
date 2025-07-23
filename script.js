@@ -251,3 +251,76 @@ function playAudio() {
         isPlaying = true;
         playBtn.style.display = 'none';
         pauseBtn.style.display = 'inline-flex';
+        progressText.textContent = 'Playing...';
+    };
+    
+    currentUtterance.onend = () => {
+        isPlaying = false;
+        playBtn.style.display = 'inline-flex';
+        pauseBtn.style.display = 'none';
+        progressText.textContent = 'Finished';
+        progressFill.style.width = '100%';
+    };
+    
+    currentUtterance.onpause = () => {
+        playBtn.style.display = 'inline-flex';
+        pauseBtn.style.display = 'none';
+        progressText.textContent = 'Paused';
+    };
+    
+    currentUtterance.onresume = () => {
+        playBtn.style.display = 'none';
+        pauseBtn.style.display = 'inline-flex';
+        progressText.textContent = 'Playing...';
+    };
+    
+    // Track progress
+    let charIndex = 0;
+    currentUtterance.onboundary = (event) => {
+        if (event.name === 'word') {
+            charIndex = event.charIndex;
+            const progress = (charIndex / text.length) * 100;
+            progressFill.style.width = progress + '%';
+        }
+    };
+    
+    speechSynthesis.speak(currentUtterance);
+}
+
+function pauseAudio() {
+    if (speechSynthesis.speaking && !speechSynthesis.paused) {
+        speechSynthesis.pause();
+    } else if (speechSynthesis.paused) {
+        speechSynthesis.resume();
+    }
+}
+
+function stopAudio() {
+    speechSynthesis.cancel();
+    isPlaying = false;
+    playBtn.style.display = 'inline-flex';
+    pauseBtn.style.display = 'none';
+    progressFill.style.width = '0%';
+    progressText.textContent = 'Stopped';
+}
+
+// Download functionality
+async function downloadAudio() {
+    if (!bookData || !bookData.chapters[currentChapter]) return;
+    
+    alert('Note: Direct audio download is limited in browsers. The audio will play and you can use your system\'s audio recording tools to capture it. Alternatively, you can use the browser\'s built-in save functionality if available.');
+    
+    // Create a blob URL for the text content
+    const text = bookData.chapters[currentChapter].text;
+    const blob = new Blob([text], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    
+    // Create download link for the text
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${bookTitle.textContent} - Chapter ${currentChapter + 1}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
